@@ -6,17 +6,21 @@ class TicTacToeView {
     }
 
     initBoard(cellClickHandler) {
-        for (let i = 0; i < 9; i++) {
-            const cell = document.createElement('div');
-            cell.className = 'cell';
-            cell.id = i;
-            cell.addEventListener('click', () => cellClickHandler(i));
-            this.boardElement.appendChild(cell);
+        for (let i = 0; i < 3; i++) {
+            for (let j = 0; j < 3; j++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                cell.dataset.row = i;
+                cell.dataset.col = j;
+                cell.addEventListener('click', () => cellClickHandler(i, j));
+                this.boardElement.appendChild(cell);
+            }
         }
     }
 
-    updateCell(index, player) {
-        document.getElementById(index).innerText = player;
+    updateCell(row, col, player) {
+        const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+        cell.innerText = player;
     }
 
     showAlert(message) {

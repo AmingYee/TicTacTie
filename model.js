@@ -1,6 +1,10 @@
 class TicTacToeModel {
     constructor() {
-        this.board = ['', '', '', '', '', '', '', '', ''];
+        this.board = [
+            ['', '', ''],
+            ['', '', ''],
+            ['', '', '']
+        ];
         this.human = 'X';
         this.ai = 'O';
         this.currentPlayer = 'X';
@@ -18,28 +22,43 @@ class TicTacToeModel {
         return this.currentPlayer;
     }
 
-    makeMove(index, player) {
-        this.board[index] = player;
+    makeMove(row, col, player) {
+        if (this.board[row][col] === '') {
+            this.board[row][col] = player;
+            return true;
+        }
+        return false;
     }
 
     resetBoard() {
-        this.board = ['', '', '', '', '', '', '', '', ''];
+        this.board = [
+            ['', '', ''],
+            ['', '', ''],
+            ['', '', '']
+        ];
         this.currentPlayer = this.human;
     }
 
     checkWinner(player) {
         const winPositions = [
-            [0, 1, 2], [3, 4, 5], [6, 7, 8],
-            [0, 3, 6], [1, 4, 7], [2, 5, 8],
-            [0, 4, 8], [2, 4, 6]
+            [[0, 0], [0, 1], [0, 2]],
+            [[1, 0], [1, 1], [1, 2]],
+            [[2, 0], [2, 1], [2, 2]],
+
+            [[0, 0], [1, 0], [2, 0]],
+            [[0, 1], [1, 1], [2, 1]],
+            [[0, 2], [1, 2], [2, 2]],
+
+            [[0, 0], [1, 1], [2, 2]],
+            [[0, 2], [1, 1], [2, 0]]
         ];
         return winPositions.some(combination => {
-            return combination.every(index => this.board[index] === player);
+            return combination.every(([row, col]) => this.board[row][col] === player);
         });
     }
 
     checkDraw() {
-        return this.board.every(cell => cell !== '');
+        return this.board.every(row => row.every(cell => cell !== ''));
     }
 }
 

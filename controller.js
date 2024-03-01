@@ -12,16 +12,16 @@ class TicTacToeController {
     init() {
         this.model.setCurrentPlayer(this.playerSymbol);
 
-        this.view.initBoard(index => this.cellClick(index));
+        this.view.initBoard((row, col) => this.cellClick(row, col));
         this.view.bindReset(this.resetGame.bind(this));
         this.view.bindPlayerSymbolChange(this.changePlayerSymbol.bind(this));
     }
 
-    cellClick(index) {
+    cellClick(row, col) {
         const currentPlayer = this.model.getCurrentPlayer();
-        if (this.model.getBoard()[index] === '' && currentPlayer === this.playerSymbol) {
-            this.model.makeMove(index, currentPlayer);
-            this.view.updateCell(index, currentPlayer);
+        if (this.model.getBoard()[row][col] === '' && currentPlayer === this.playerSymbol) {
+            this.model.makeMove(row, col, currentPlayer);
+            this.view.updateCell(row, col, currentPlayer);
             if (this.model.checkWinner(currentPlayer)) {
                 this.view.showAlert(`${currentPlayer} wins!`);
                 this.resetGame();
@@ -39,19 +39,22 @@ class TicTacToeController {
         const currentPlayer = this.model.getCurrentPlayer();
         let bestScore = -Infinity;
         let move;
-        for (let i = 0; i < this.model.getBoard().length; i++) {
-            if (this.model.getBoard()[i] === '') {
-                this.model.makeMove(i, currentPlayer);
-                let score = this.minimax(this.model.getBoard(), 0, false);
-                this.model.makeMove(i, '');
-                if (score > bestScore) {
-                    bestScore = score;
-                    move = i;
+        const board = this.model.getBoard();
+        for (let i = 0; i < board.length; i++) {
+            for (let j = 0; j < board[i].length; j++) {
+                if (board[i][j] === '') {
+                    board[i][j] = currentPlayer;
+                    let score = this.minimax(board, 0, false);
+                    board[i][j] = '';
+                    if (score > bestScore) {
+                        bestScore = score;
+                        move = { row: i, col: j };
+                    }
                 }
             }
         }
-        this.model.makeMove(move, currentPlayer);
-        this.view.updateCell(move, currentPlayer);
+        this.model.makeMove(move.row, move.col, currentPlayer);
+        this.view.updateCell(move.row, move.col, currentPlayer);
         if (this.model.checkWinner(currentPlayer)) {
             this.view.showAlert(`${currentPlayer} wins!`);
         } else if (this.model.checkDraw()) {
@@ -85,26 +88,30 @@ class TicTacToeController {
         let bestScore = isMaximizing ? -Infinity : Infinity;
 
         for (let i = 0; i < board.length; i++) {
-            if (board[i] === '') {
-                board[i] = currentPlayer;
+            for (let j = 0; j < board[i].length; j++) {
+                if (board[i][j] === '') {
+                    board[i][j] = currentPlayer;
 
-                if (this.model.checkWinner(currentPlayer)) {
-                    board[i] = '';
-                    return isMaximizing ? 10 - depth : -10 + depth;
+                    if (this.model.checkWinner(currentPlayer)) {
+                        board[i][j] = '';
+                        return isMaximizing ? 10 - depth : -10 + depth;
+                    }
+
+                    board[i][j] = '';
                 }
-
-                board[i] = '';
             }
         }
 
         for (let i = 0; i < board.length; i++) {
-            if (board[i] === '') {
-                board[i] = currentPlayer;
+            for (let j = 0; j < board[i].length; j++) {
+                if (board[i][j] === '') {
+                    board[i][j] = currentPlayer;
 
-                const score = this.evaluate(board) + this.minimax(board, depth + 1, !isMaximizing);
-                bestScore = isMaximizing ? Math.max(score, bestScore) : Math.min(score, bestScore);
+                    const score = this.evaluate(board) + this.minimax(board, depth + 1, !isMaximizing);
+                    bestScore = isMaximizing ? Math.max(score, bestScore) : Math.min(score, bestScore);
 
-                board[i] = '';
+                    board[i][j] = '';
+                }
             }
         }
 
@@ -116,10 +123,12 @@ class TicTacToeController {
 
         let score = 0;
         for (let i = 0; i < board.length; i++) {
-            if (board[i] === this.aiSymbol) {
-                score += fieldValues[i];
-            } else if (board[i] === this.playerSymbol) {
-                score -= fieldValues[i];
+            for (let j = 0; j < board[i].length; j++) {
+                if (board[i][j] === this.aiSymbol) {
+                    score += fieldValues[i * 3 + j];
+                } else if (board[i][j] === this.playerSymbol) {
+                    score -= fieldValues[i * 3 + j];
+                }
             }
         }
         return score;
@@ -129,8 +138,6 @@ class TicTacToeController {
         this.model.resetBoard();
         this.view.resetUI();
         this.model.setCurrentPlayer(this.playerSymbol);
-        //console.log("player: " + this.playerSymbol)
-        //console.log("ai: " + this.aiSymbol)
 
         if (this.playerSymbol === 'O') {
             this.switchPlayer();
