@@ -54,10 +54,8 @@ class TicTacToeController {
         this.view.updateCell(move, currentPlayer);
         if (this.model.checkWinner(currentPlayer)) {
             this.view.showAlert(`${currentPlayer} wins!`);
-            this.resetGame();
         } else if (this.model.checkDraw()) {
             this.view.showAlert("It's a draw!");
-            this.resetGame();
         } else {
             this.switchPlayer();
         }
@@ -68,7 +66,6 @@ class TicTacToeController {
     }
 
     minimax(board, depth, isMaximizing) {
-        //console.log("current depth: " + depth)
         const currentPlayer = isMaximizing ? this.aiSymbol : this.playerSymbol;
 
         if (this.model.checkWinner(this.playerSymbol)) {
@@ -79,26 +76,35 @@ class TicTacToeController {
             return 0;
         }
 
-        let MAX_DEPTH = 3;
+        let MAX_DEPTH = 9;
 
         if (depth >= MAX_DEPTH) {
             return this.evaluate(board);
         }
 
         let bestScore = isMaximizing ? -Infinity : Infinity;
+
         for (let i = 0; i < board.length; i++) {
             if (board[i] === '') {
                 board[i] = currentPlayer;
 
-                const score = this.minimax(board, depth + 1, !isMaximizing);
+                if (this.model.checkWinner(currentPlayer)) {
+                    board[i] = '';
+                    return isMaximizing ? 10 - depth : -10 + depth;
+                }
 
                 board[i] = '';
+            }
+        }
 
-                if (isMaximizing) {
-                    bestScore = Math.max(score, bestScore);
-                } else {
-                    bestScore = Math.min(score, bestScore);
-                }
+        for (let i = 0; i < board.length; i++) {
+            if (board[i] === '') {
+                board[i] = currentPlayer;
+
+                const score = this.evaluate(board) + this.minimax(board, depth + 1, !isMaximizing);
+                bestScore = isMaximizing ? Math.max(score, bestScore) : Math.min(score, bestScore);
+
+                board[i] = '';
             }
         }
 
