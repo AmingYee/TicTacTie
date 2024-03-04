@@ -52,9 +52,9 @@ class TicTacToeController {
 
     minMax(board, player) {
         if (this.model.checkWinner(this.playerSymbol)) {
-            return { score: -10 };
+            return { score: -20 };
         } else if (this.model.checkWinner(this.aiSymbol)) {
-            return { score: 10 };
+            return { score: 20 };
         } else if (this.model.checkDraw()) {
             return { score: 0 };
         }
@@ -69,14 +69,14 @@ class TicTacToeController {
                     move.col = ii;
                     board[i][ii] = player;
 
-                    //move.score = this.evaluate(board, player)
+                    move.score = this.evaluate(i, ii)
 
                     if (player === this.aiSymbol) {
                         const result = this.minMax(board, this.playerSymbol);
-                        move.score = result.score;
+                        move.score += result.score;
                     } else {
                         const result = this.minMax(board, this.aiSymbol);
-                        move.score = result.score;
+                        move.score += result.score;
                     }
 
                     board[i][ii] = '';
@@ -106,17 +106,22 @@ class TicTacToeController {
         return bestMove;
     }
 
-    evaluate(board, player) {
+    evaluate(row, col) {
+        const fieldvalue = [
+            [3, 2, 3],
+            [2, 4, 2],
+            [3, 2, 3]
+        ];
+
         let score = 0;
-        for (let i = 0; i < 3; i++) {
-            for (let ii = 0; ii < 3; ii++) {
-                if (board[i][ii] === player) {
-                    score += [
-                        [3, 2, 3],
-                        [2, 4, 2],
-                        [3, 2, 3]][i][ii];
-                }
+        let rowIndex = 0;
+        while (rowIndex < row) {
+            let colIndex = 0;
+            while (colIndex < col) {
+                score = fieldvalue[rowIndex][colIndex];
+                colIndex++;
             }
+            rowIndex++;
         }
         return score;
     }
