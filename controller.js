@@ -36,27 +36,13 @@ class TicTacToeController {
     }
 
     makeAiMove() {
-        const currentPlayer = this.model.getCurrentPlayer();
-        let bestScore = -Infinity;
-        let move;
         const board = this.model.getBoard();
-        for (let i = 0; i < board.length; i++) {
-            for (let j = 0; j < board[i].length; j++) {
-                if (board[i][j] === '') {
-                    board[i][j] = currentPlayer;
-                    let score = this.minimax(board, 0, false);
-                    board[i][j] = '';
-                    if (score > bestScore) {
-                        bestScore = score;
-                        move = { row: i, col: j };
-                    }
-                }
-            }
-        }
-        this.model.makeMove(move.row, move.col, currentPlayer);
-        this.view.updateCell(move.row, move.col, currentPlayer);
-        if (this.model.checkWinner(currentPlayer)) {
-            this.view.showAlert(`${currentPlayer} wins!`);
+        const bestMove = this.minMax(board, this.aiSymbol);
+        this.model.makeMove(bestMove.row, bestMove.col, this.aiSymbol);
+        this.view.updateCell(bestMove.row, bestMove.col, this.aiSymbol);
+
+        if (this.model.checkWinner(this.aiSymbol)) {
+            this.view.showAlert(`${this.aiSymbol} wins!`);
         } else if (this.model.checkDraw()) {
             this.view.showAlert("It's a draw!");
         } else {
@@ -64,74 +50,79 @@ class TicTacToeController {
         }
     }
 
-    switchPlayer() {
-        this.model.setCurrentPlayer(this.model.getCurrentPlayer() === this.playerSymbol ? this.aiSymbol : this.playerSymbol);
-    }
-
-    minimax(board, depth, isMaximizing) {
-        const currentPlayer = isMaximizing ? this.aiSymbol : this.playerSymbol;
-
+    minMax(board, player) {
         if (this.model.checkWinner(this.playerSymbol)) {
-            return -10 + depth;
+            return { score: -10 };
         } else if (this.model.checkWinner(this.aiSymbol)) {
-            return 10 - depth;
+            return { score: 10 };
         } else if (this.model.checkDraw()) {
-            return 0;
+            return { score: 0 };
         }
 
-        let MAX_DEPTH = 9;
+        const moves = [];
 
-        if (depth >= MAX_DEPTH) {
-            return this.evaluate(board);
-        }
+        for (let i = 0; i < 3; i++) {
+            for (let ii = 0; ii < 3; ii++) {
+                if (board[i][ii] === '') {
+                    const move = {};
+                    move.row = i;
+                    move.col = ii;
+                    board[i][ii] = player;
 
-        let bestScore = isMaximizing ? -Infinity : Infinity;
+                    //move.score = this.evaluate(board, player)
 
-        for (let i = 0; i < board.length; i++) {
-            for (let j = 0; j < board[i].length; j++) {
-                if (board[i][j] === '') {
-                    board[i][j] = currentPlayer;
-
-                    if (this.model.checkWinner(currentPlayer)) {
-                        board[i][j] = '';
-                        return isMaximizing ? 10 - depth : -10 + depth;
+                    if (player === this.aiSymbol) {
+                        const result = this.minMax(board, this.playerSymbol);
+                        move.score = result.score;
+                    } else {
+                        const result = this.minMax(board, this.aiSymbol);
+                        move.score = result.score;
                     }
 
-                    board[i][j] = '';
+                    board[i][ii] = '';
+                    moves.push(move);
                 }
             }
         }
 
-        for (let i = 0; i < board.length; i++) {
-            for (let j = 0; j < board[i].length; j++) {
-                if (board[i][j] === '') {
-                    board[i][j] = currentPlayer;
-
-                    const score = this.evaluate(board) + this.minimax(board, depth + 1, !isMaximizing);
-                    bestScore = isMaximizing ? Math.max(score, bestScore) : Math.min(score, bestScore);
-
-                    board[i][j] = '';
+        let bestMove;
+        if (player === this.aiSymbol) {
+            let bestScore = -Infinity;
+            for (const move of moves) {
+                if (move.score > bestScore) {
+                    bestScore = move.score;
+                    bestMove = move;
+                }
+            }
+        } else {
+            let bestScore = Infinity;
+            for (const move of moves) {
+                if (move.score < bestScore) {
+                    bestScore = move.score;
+                    bestMove = move;
                 }
             }
         }
-
-        return bestScore;
+        return bestMove;
     }
 
-    evaluate(board) {
-        const fieldValues = [3, 2, 3, 2, 4, 2, 3, 2, 3];
-
+    evaluate(board, player) {
         let score = 0;
-        for (let i = 0; i < board.length; i++) {
-            for (let j = 0; j < board[i].length; j++) {
-                if (board[i][j] === this.aiSymbol) {
-                    score += fieldValues[i * 3 + j];
-                } else if (board[i][j] === this.playerSymbol) {
-                    score -= fieldValues[i * 3 + j];
+        for (let i = 0; i < 3; i++) {
+            for (let ii = 0; ii < 3; ii++) {
+                if (board[i][ii] === player) {
+                    score += [
+                        [3, 2, 3],
+                        [2, 4, 2],
+                        [3, 2, 3]][i][ii];
                 }
             }
         }
         return score;
+    }
+
+    switchPlayer() {
+        this.model.setCurrentPlayer(this.model.getCurrentPlayer() === this.playerSymbol ? this.aiSymbol : this.playerSymbol);
     }
 
     resetGame() {
