@@ -37,7 +37,7 @@ class TicTacToeController {
 
     makeAiMove() {
         const board = this.model.getBoard();
-        const bestMove = this.minMax(board, this.aiSymbol);
+        const bestMove = this.minMax(board, this.aiSymbol, 0, true);
         this.model.makeMove(bestMove.row, bestMove.col, this.aiSymbol);
         this.view.updateCell(bestMove.row, bestMove.col, this.aiSymbol);
 
@@ -50,7 +50,7 @@ class TicTacToeController {
         }
     }
 
-    minMax(board, player) {
+    minMax(board, player, depth, isMaximizing) {
         if (this.model.checkWinner(this.playerSymbol)) {
             return { score: -20 };
         } else if (this.model.checkWinner(this.aiSymbol)) {
@@ -69,15 +69,11 @@ class TicTacToeController {
                     move.col = ii;
                     board[i][ii] = player;
 
-                    move.score = this.evaluate(i, ii)
+                    move.score = this.fieldvalue(i, ii)
 
-                    if (player === this.aiSymbol) {
-                        const result = this.minMax(board, this.playerSymbol);
-                        move.score += result.score;
-                    } else {
-                        const result = this.minMax(board, this.aiSymbol);
-                        move.score += result.score;
-                    }
+                    const opponent = player === this.aiSymbol ? this.playerSymbol : this.aiSymbol;
+                    const result = this.minMax(board, opponent, depth - 1, !isMaximizing);
+                    move.score += result.score;
 
                     board[i][ii] = '';
                     moves.push(move);
@@ -86,7 +82,7 @@ class TicTacToeController {
         }
 
         let bestMove;
-        if (player === this.aiSymbol) {
+        if (isMaximizing) {
             let bestScore = -Infinity;
             for (const move of moves) {
                 if (move.score > bestScore) {
@@ -106,7 +102,7 @@ class TicTacToeController {
         return bestMove;
     }
 
-    evaluate(row, col) {
+    fieldvalue(row, col) {
         const fieldvalue = [
             [3, 2, 3],
             [2, 4, 2],
