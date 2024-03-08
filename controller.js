@@ -50,11 +50,11 @@ class TicTacToeController {
         }
     }
 
-    minMax(board, player, depth, isMaximizing) {
+    minMax(board, player, depth, isMaximizing, alpha, beta) {
         if (this.model.checkWinner(this.playerSymbol)) {
-            return { score: -20 };
+            return { score: -10 - depth};
         } else if (this.model.checkWinner(this.aiSymbol)) {
-            return { score: 20 };
+            return { score: 10 + depth};
         } else if (this.model.checkDraw()) {
             return { score: 0 };
         }
@@ -69,14 +69,22 @@ class TicTacToeController {
                     move.col = ii;
                     board[i][ii] = player;
 
-                    move.score = this.fieldvalue(i, ii)
-
                     const opponent = player === this.aiSymbol ? this.playerSymbol : this.aiSymbol;
                     const result = this.minMax(board, opponent, depth - 1, !isMaximizing);
-                    move.score += result.score;
+                    move.score = result.score;
 
                     board[i][ii] = '';
                     moves.push(move);
+
+                    if (isMaximizing) {
+                        alpha = Math.max(alpha, move.score);
+                    } else {
+                        beta = Math.min(beta, move.score);
+                    }
+
+                    if (beta <= alpha) {
+                        break;
+                    }
                 }
             }
         }
@@ -100,26 +108,6 @@ class TicTacToeController {
             }
         }
         return bestMove;
-    }
-
-    fieldvalue(row, col) {
-        const fieldvalue = [
-            [3, 2, 3],
-            [2, 4, 2],
-            [3, 2, 3]
-        ];
-
-        let score = 0;
-        let rowIndex = 0;
-        while (rowIndex < row) {
-            let colIndex = 0;
-            while (colIndex < col) {
-                score = fieldvalue[rowIndex][colIndex];
-                colIndex++;
-            }
-            rowIndex++;
-        }
-        return score;
     }
 
     switchPlayer() {
