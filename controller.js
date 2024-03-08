@@ -7,6 +7,11 @@ class TicTacToeController {
         this.view = view;
         this.playerSymbol = 'X';
         this.aiSymbol = 'O';
+        this.heuristicValues = [
+            [2, 1, 2],
+            [1, 3, 1],
+            [2, 1, 2]
+        ];
     }
 
     init() {
@@ -52,7 +57,7 @@ class TicTacToeController {
 
     minMax(board, player, depth, isMaximizing, alpha, beta) {
         if (this.model.checkWinner(this.playerSymbol)) {
-            return { score: -10 - depth};
+            return { score: -10 + depth};
         } else if (this.model.checkWinner(this.aiSymbol)) {
             return { score: 10 + depth};
         } else if (this.model.checkDraw()) {
@@ -70,8 +75,10 @@ class TicTacToeController {
                     board[i][ii] = player;
 
                     const opponent = player === this.aiSymbol ? this.playerSymbol : this.aiSymbol;
-                    const result = this.minMax(board, opponent, depth - 1, !isMaximizing);
+                    const result = this.minMax(board, opponent, depth - 2, !isMaximizing);
                     move.score = result.score;
+
+                    move.score += this.heuristicValues[i][ii];
 
                     board[i][ii] = '';
                     moves.push(move);
@@ -89,13 +96,15 @@ class TicTacToeController {
             }
         }
 
-        let bestMove;
+        let bestMoves = [];
         if (isMaximizing) {
             let bestScore = -Infinity;
             for (const move of moves) {
                 if (move.score > bestScore) {
                     bestScore = move.score;
-                    bestMove = move;
+                    bestMoves = [move];
+                } else if (move.score === bestScore) {
+                    bestMoves.push(move);
                 }
             }
         } else {
@@ -103,10 +112,15 @@ class TicTacToeController {
             for (const move of moves) {
                 if (move.score < bestScore) {
                     bestScore = move.score;
-                    bestMove = move;
+                    bestMoves = [move];
+                } else if (move.score === bestScore) {
+                    bestMoves.push(move);
                 }
             }
         }
+
+        let bestMove = bestMoves[Math.floor(Math.random() * bestMoves.length)];
+
         return bestMove;
     }
 
