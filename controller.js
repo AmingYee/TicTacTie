@@ -21,9 +21,6 @@ class TicTacToeController {
         this.view.initBoard((row, col) => this.cellClick(row, col));
         this.view.bindReset(this.resetGame.bind(this));
         this.view.bindPlayerSymbolChange(this.changePlayerSymbol.bind(this));
-
-        const gameTree = this.generateGameTree(this.model.getBoard(), this.model.getCurrentPlayer());
-        this.view.drawTree(gameTree);
     }
 
     cellClick(row, col) {
