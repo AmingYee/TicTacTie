@@ -7,9 +7,8 @@
   <link rel="stylesheet" type="text/css" href="style.css">
 </head>
 <body>
-<h3>TicTacTie</h3>
-<div id="board" class="board">
-</div>
+<h3>TicTacToe</h3>
+<div id="board" class="board"></div>
 <div id="controls">
   <button id="resetBtn">Reset Game</button>
   <label for="playerSymbol">Choose your symbol:</label>
@@ -18,7 +17,11 @@
     <option value="O">O</option>
   </select>
 </div>
-
+<div id="alpha-beta-values">
+  <p>Alpha: <span id="alpha-value">-Infinity</span></p>
+  <p>Beta: <span id="beta-value">Infinity</span></p>
+</div>
+<canvas id="game-tree" width="1920" height="1200"></canvas>
 <script type="module" src="controller.js"></script>
 </body>
 </html>

@@ -7,6 +7,7 @@ class TicTacToeController {
         this.view = view;
         this.playerSymbol = 'X';
         this.aiSymbol = 'O';
+        this.maxDepth = 4;
         this.heuristicValues = [
             [2, 1, 2],
             [1, 3, 1],
@@ -20,10 +21,14 @@ class TicTacToeController {
         this.view.initBoard((row, col) => this.cellClick(row, col));
         this.view.bindReset(this.resetGame.bind(this));
         this.view.bindPlayerSymbolChange(this.changePlayerSymbol.bind(this));
+
+        const gameTree = this.generateGameTree(this.model.getBoard(), this.model.getCurrentPlayer());
+        this.view.drawTree(gameTree);
     }
 
     cellClick(row, col) {
         const currentPlayer = this.model.getCurrentPlayer();
+        console.log(`Player ${currentPlayer} clicked on cell (${row}, ${col})`);
         if (this.model.getBoard()[row][col] === '' && currentPlayer === this.playerSymbol) {
             this.model.makeMove(row, col, currentPlayer);
             this.view.updateCell(row, col, currentPlayer);
@@ -40,9 +45,19 @@ class TicTacToeController {
         }
     }
 
-    makeAiMove() {
+    async makeAiMove() {
         const board = this.model.getBoard();
-        const bestMove = this.minMax(board, this.aiSymbol, 0, true);
+        const gameTree = this.generateGameTree(this.model.getBoard(), this.model.getCurrentPlayer());
+        console.log(gameTree);
+        this.view.drawTree(gameTree)
+
+        let maximizing = true
+        if (this.playerSymbol === 'O'){
+            maximizing = false;
+        }
+
+        const bestMove = await this.minMax(gameTree, this.maxDepth, maximizing, -Infinity, Infinity);
+
         this.model.makeMove(bestMove.row, bestMove.col, this.aiSymbol);
         this.view.updateCell(bestMove.row, bestMove.col, this.aiSymbol);
 
@@ -55,56 +70,82 @@ class TicTacToeController {
         }
     }
 
-    minMax(board, player, depth, isMaximizing, alpha, beta) {
-        if (this.model.checkWinner(this.playerSymbol)) {
-            return { score: -10 + depth};
-        } else if (this.model.checkWinner(this.aiSymbol)) {
-            return { score: 10 + depth};
-        } else if (this.model.checkDraw()) {
-            return { score: 0 };
+    generateGameTree(board, currentPlayer) {
+        let rootNode = {
+            board: board,
+            children: []
+        };
+
+        this.generateGameTreeHelper(rootNode, currentPlayer, 0);
+
+        return rootNode;
+    }
+
+    generateGameTreeHelper(node, currentPlayer, depth) {
+        if (depth >= this.maxDepth || this.model.checkWinner(this.playerSymbol) || this.model.checkWinner(this.aiSymbol) || this.model.checkDraw()) {
+            return;
+        }
+
+        node.children = [];
+
+        for (let i = 0; i < 3; i++) {
+            for (let ii = 0; ii < 3; ii++) {
+                if (node.board[i][ii] === '') {
+                    const newBoard = JSON.parse(JSON.stringify(node.board));
+                    newBoard[i][ii] = currentPlayer;
+                    const nextPlayer = currentPlayer === this.playerSymbol ? this.aiSymbol : this.playerSymbol;
+                    const childNode = {
+                        board: newBoard,
+                        move: { row: i, col: ii },
+                        children: []
+                    };
+                    node.children.push(childNode);
+                    this.generateGameTreeHelper(childNode, nextPlayer, depth + 1);
+                }
+            }
+        }
+    }
+
+    async minMax(node, depth, isMaximizing, alpha, beta) {
+        this.view.highlightNode(node, 'red');
+        await new Promise(resolve => setTimeout(resolve, 20));
+
+        if (node.children.length === 0 || this.model.checkWinner2('X', node.board) || this.model.checkWinner2('O', node.board) || this.model.checkDraw2(node.board)) {
+            let score = this.evaluate(node.board, depth)
+            console.log(score)
+            console.log(node.board)
+            return { score: score };
         }
 
         const moves = [];
 
-        for (let i = 0; i < 3; i++) {
-            for (let ii = 0; ii < 3; ii++) {
-                if (board[i][ii] === '') {
-                    const move = {};
-                    move.row = i;
-                    move.col = ii;
-                    board[i][ii] = player;
+        for (const child of node.children) {
+            this.view.highlightNode(node, 'white');
+            const result = await this.minMax(child, depth - 1, !isMaximizing, alpha, beta);
 
-                    const opponent = player === this.aiSymbol ? this.playerSymbol : this.aiSymbol;
-                    const result = this.minMax(board, opponent, depth - 2, !isMaximizing);
-                    move.score = result.score;
+            result.row = child.move.row;
+            result.col = child.move.col;
+            moves.push(result);
+            if (isMaximizing) {
+                alpha = Math.max(alpha, result.score);
+                this.view.updateAlphaBeta(alpha, beta);
+            } else {
+                beta = Math.min(beta, result.score);
+                this.view.updateAlphaBeta(alpha, beta);
+            }
 
-                    move.score += this.heuristicValues[i][ii];
-
-                    board[i][ii] = '';
-                    moves.push(move);
-
-                    if (isMaximizing) {
-                        alpha = Math.max(alpha, move.score);
-                    } else {
-                        beta = Math.min(beta, move.score);
-                    }
-
-                    if (beta <= alpha) {
-                        break;
-                    }
-                }
+            if (beta <= alpha) {
+                break;
             }
         }
 
-        let bestMoves = [];
+        let bestMove;
         if (isMaximizing) {
             let bestScore = -Infinity;
             for (const move of moves) {
                 if (move.score > bestScore) {
                     bestScore = move.score;
-                    bestMoves = [move];
-                } else if (move.score === bestScore) {
-                    bestMoves.push(move);
+                    bestMove = move;
                 }
             }
         } else {
@@ -112,16 +153,38 @@ class TicTacToeController {
             for (const move of moves) {
                 if (move.score < bestScore) {
                     bestScore = move.score;
-                    bestMoves = [move];
-                } else if (move.score === bestScore) {
-                    bestMoves.push(move);
+                    bestMove = move;
+                }
+            }
+        }
+        return bestMove;
+    }
+
+    evaluate(board, depth) {
+        let depthPointModifier = depth * 1200;
+        if (this.model.checkWinner2('X', board)) {
+            return 1000 - depthPointModifier;
+        } else if (this.model.checkWinner2('O', board)) {
+            return -1000 + depthPointModifier;
+        } else if (this.model.checkDraw2(board)) {
+            return 0;
+        }
+
+        let score = 0;
+
+        for (let i = 0; i < 3; i++) {
+            for (let ii = 0; ii < 3; ii++) {
+                if (board[i][ii] === 'X') {
+                    score += this.heuristicValues[i][ii];
+                    score -= depth;
+                } else if (board[i][ii] === 'O') {
+                    score -= this.heuristicValues[i][ii];
+                    score += depth;
                 }
             }
         }
 
-        let bestMove = bestMoves[Math.floor(Math.random() * bestMoves.length)];
-
-        return bestMove;
+        return score;
     }
 
     switchPlayer() {
@@ -132,6 +195,7 @@ class TicTacToeController {
         this.model.resetBoard();
         this.view.resetUI();
         this.model.setCurrentPlayer(this.playerSymbol);
+
 
         if (this.playerSymbol === 'O') {
             this.switchPlayer();
