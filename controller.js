@@ -79,7 +79,7 @@ class TicTacToeController {
     }
 
     generateGameTreeHelper(node, currentPlayer, depth) {
-        if (depth >= this.maxDepth || this.model.checkWinner2(this.playerSymbol) || this.model.checkWinner2(this.aiSymbol) || this.model.checkDraw()) {
+        if (depth >= this.maxDepth || this.model.checkWinner2(this.playerSymbol, node.board) || this.model.checkWinner2(this.aiSymbol, node.board) || this.model.checkDraw2(node.board)) {
             return;
         }
 
