@@ -158,11 +158,10 @@ class TicTacToeController {
     }
 
     evaluate(board, depth) {
-        let depthPointModifier = depth * 1200;
         if (this.model.checkWinner2('X', board)) {
-            return 1000 - depthPointModifier;
+            return -1000 + depth;
         } else if (this.model.checkWinner2('O', board)) {
-            return -1000 + depthPointModifier;
+            return 1000 - depth;
         } else if (this.model.checkDraw2(board)) {
             return 0;
         }
@@ -172,11 +171,9 @@ class TicTacToeController {
         for (let i = 0; i < 3; i++) {
             for (let ii = 0; ii < 3; ii++) {
                 if (board[i][ii] === 'X') {
-                    score += this.heuristicValues[i][ii];
-                    score -= depth;
-                } else if (board[i][ii] === 'O') {
                     score -= this.heuristicValues[i][ii];
-                    score += depth;
+                } else if (board[i][ii] === 'O') {
+                    score += this.heuristicValues[i][ii];
                 }
             }
         }
