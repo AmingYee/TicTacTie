@@ -79,12 +79,12 @@ class TicTacToeView {
         ctx.arc(x, y, radius, 0, 2 * Math.PI);
         ctx.stroke();
 
-        const boardString = node.board.map(row => row.join('')).join('\n');
+        const boardString = node.board.map(row => row.map(cell => cell === '' ? '⠀' : cell).join('')).join('\n');
         const lines = boardString.split('\n');
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         lines.forEach((line, index) => {
-            ctx.fillText(line, x, y - radius + 10 * index);
+            ctx.fillText(line, x, y - 9 + 10 * index);
         });
 
         for (const child of node.children) {
