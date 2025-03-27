@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Tic Tac Toe vs AI</title>
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      gap: 50px;
+      font-family: Arial, sans-serif;
+    }
+
+    .game-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 5px;
+      background: #333;
+      padding: 5px;
+      border-radius: 10px;
+    }
+
+    .cell {
+      width: 80px;
+      height: 80px;
+      background: white;
+      border: none;
+      font-size: 40px;
+      cursor: pointer;
+    }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+    }
+
+    button {
+      padding: 10px 20px;
+      cursor: pointer;
+    }
+
+    #tree {
+      width: 800px;
+      height: 600px;
+      border: 1px solid #ccc;
+      overflow: auto;
+    }
+
+    .node {
+      position: absolute;
+      width: 40px;
+      height: 40px;
+      border: 1px solid black;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: white;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+<div class="game-container">
+  <div class="controls">
+    <button onclick="startGame(true)">Human First</button>
+    <button onclick="startGame(false)">AI First</button>
+    <button onclick="resetGame()">Reset</button>
+  </div>
+  <div class="board" id="board"></div>
+  <div>Status: <span id="status">Choose who starts</span></div>
+</div>
+<div id="tree"></div>
+
+<script>
+  let board = Array(9).fill('');
+  let humanTurn = true;
+  let gameActive = false;
+  const human = 'X';
+  const ai = 'O';
+  let nodes = [];
+
+  function createBoard() {
+    const boardElement = document.getElementById('board');
+    boardElement.innerHTML = '';
+    for (let i = 0; i < 9; i++) {
+      const cell = document.createElement('button');
+      cell.className = 'cell';
+      cell.setAttribute('data-index', i);
+      cell.addEventListener('click', () => handleCellClick(i));
+      boardElement.appendChild(cell);
+    }
+  }
+
+  function startGame(humanStarts) {
+    gameActive = true;
+    humanTurn = humanStarts;
+    board = Array(9).fill('');
+    updateBoardDisplay();
+    document.getElementById('status').textContent = humanStarts ?
+            'Your turn' : 'AI is thinking...';
+    if (!humanStarts) aiMove();
+  }
+
+  function resetGame() {
+    gameActive = false;
+    board = Array(9).fill('');
+    updateBoardDisplay();
+    document.getElementById('status').textContent = 'Choose who starts';
+    clearTree();
+  }
+
+  function handleCellClick(index) {
+    if (!gameActive || !humanTurn || board[index]) return;
+
+    board[index] = human;
+    humanTurn = false;
+    updateBoardDisplay();
+
+    if (checkWin(board, human)) {
+      gameOver('You win!');
+      return;
+    }
+
+    if (isDraw()) {
+      gameOver('Draw!');
+      return;
+    }
+
+    document.getElementById('status').textContent = 'AI is thinking...';
+    setTimeout(aiMove, 500);
+  }
+
+  function aiMove() {
+    nodes = [];
+    const move = minimax(board, ai, 0, -Infinity, Infinity, true, null).index;
+    board[move] = ai;
+    humanTurn = true;
+    updateBoardDisplay();
+    drawTree();
+
+    if (checkWin(board, ai)) {
+      gameOver('AI wins!');
+      return;
+    }
+
+    if (isDraw()) {
+      gameOver('Draw!');
+      return;
+    }
+
+    document.getElementById('status').textContent = 'Your turn';
+  }
+
+  function minimax(board, player, depth, alpha, beta, isRoot, parentId) {
+    const availSpots = emptyCells(board);
+    const nodeId = nodes.length;
+
+    if (checkWin(board, human)) return { score: -10 + depth, nodeId };
+    if (checkWin(board, ai)) return { score: 10 - depth, nodeId };
+    if (availSpots.length === 0) return { score: 0, nodeId };
+
+    const moves = [];
+    let bestScore = player === ai ? -Infinity : Infinity;
+    let bestIndex = -1;
+
+    for (const spot of availSpots) {
+      const newBoard = [...board];
+      newBoard[spot] = player;
+      const result = minimax(newBoard,
+              player === ai ? human : ai,
+              depth + 1,
+              alpha,
+              beta,
+              false,
+              nodeId
+      );
+
+      nodes.push({
+        id: nodeId,
+        parent: parentId,
+        move: spot,
+        score: result.score,
+        depth: depth,
+        player: player
+      });
+
+      if (player === ai) {
+        if (result.score > bestScore) {
+          bestScore = result.score;
+          bestIndex = spot;
+          alpha = Math.max(alpha, bestScore);
+        }
+      } else {
+        if (result.score < bestScore) {
+          bestScore = result.score;
+          bestIndex = spot;
+          beta = Math.min(beta, bestScore);
+        }
+      }
+
+      if (beta <= alpha) break;
+    }
+
+    return { score: bestScore, index: bestIndex, nodeId };
+  }
+
+  function drawTree() {
+    const treeContainer = document.getElementById('tree');
+    treeContainer.innerHTML = '';
+
+    const nodeMap = {};
+    nodes.forEach(node => {
+      const element = document.createElement('div');
+      element.className = 'node';
+      element.textContent = `${node.move}:${node.score}`;
+      element.style.backgroundColor = node.player === ai ? '#ffcccc' : '#ccffcc';
+      element.dataset.id = node.id;
+      element.dataset.parent = node.parent;
+      nodeMap[node.id] = element;
+      treeContainer.appendChild(element);
+    });
+
+    Object.values(nodeMap).forEach(node => {
+      const parent = nodeMap[node.dataset.parent];
+      if (parent) {
+        const line = document.createElement('div');
+        line.style.position = 'absolute';
+        line.style.borderLeft = '1px solid black';
+
+        const parentRect = parent.getBoundingClientRect();
+        const nodeRect = node.getBoundingClientRect();
+        const treeRect = treeContainer.getBoundingClientRect();
+
+        const top = nodeRect.top - treeRect.top + 20;
+        const left = parentRect.left - treeRect.left + 20;
+        const height = top - (parentRect.top - treeRect.top + 20);
+
+        line.style.top = `${parentRect.top - treeRect.top + 20}px`;
+        line.style.left = `${left}px`;
+        line.style.height = `${height}px`;
+        line.style.transform = 'translateY(1px)';
+
+        treeContainer.insertBefore(line, node);
+      }
+
+      node.style.left = `${node.dataset.id * 50 % 800}px`;
+      node.style.top = `${node.depth * 100 + 20}px`;
+    });
+  }
+
+  function clearTree() {
+    document.getElementById('tree').innerHTML = '';
+  }
+
+  function emptyCells(board) {
+    return board.map((cell, index) => cell === '' ? index : null).filter(cell => cell !== null);
+  }
+
+  function checkWin(board, player) {
+    const winPatterns = [
+      [0,1,2], [3,4,5], [6,7,8], // rows
+      [0,3,6], [1,4,7], [2,5,8], // columns
+      [0,4,8], [2,4,6] // diagonals
+    ];
+    return winPatterns.some(pattern =>
+            pattern.every(index => board[index] === player));
+  }
+
+  function isDraw() {
+    return board.every(cell => cell !== '');
+  }
+
+  function gameOver(message) {
+    gameActive = false;
+    document.getElementById('status').textContent = message;
+  }
+
+  function updateBoardDisplay() {
+    const cells = document.getElementsByClassName('cell');
+    for (let i = 0; i < cells.length; i++) {
+      cells[i].textContent = board[i];
+      cells[i].disabled = board[i] !== '' || !gameActive || !humanTurn;
+    }
+  }
+
+  createBoard();
+</script>
+</body>
+</html>

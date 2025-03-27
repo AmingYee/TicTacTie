@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tic-Tac-Toe with Minimax</title>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; }
+    .board { display: grid; grid-template-columns: repeat(3, 100px); grid-gap: 5px; justify-content: center; }
+    .cell { width: 100px; height: 100px; display: flex; align-items: center; justify-content: center; border: 1px solid black; font-size: 24px; cursor: pointer; }
+    .cell.taken { cursor: not-allowed; }
+    .tree { text-align: left; margin-top: 20px; }
+  </style>
+</head>
+<body>
+<h1>Tic-Tac-Toe</h1>
+<button onclick="startGame(true)">I start</button>
+<button onclick="startGame(false)">AI starts</button>
+<div class="board" id="board"></div>
+<h2>Minimax Decision Tree</h2>
+<pre id="tree" class="tree"></pre>
+<script>
+  let board = ['', '', '', '', '', '', '', '', ''];
+  let human = 'X', ai = 'O';
+  let currentPlayer;
+
+  function startGame(humanStarts) {
+    board = ['', '', '', '', '', '', '', '', ''];
+    document.getElementById("board").innerHTML = '';
+    document.getElementById("tree").textContent = '';
+    currentPlayer = humanStarts ? human : ai;
+    createBoard();
+    if (currentPlayer === ai) aiMove();
+  }
+
+  function createBoard() {
+    let boardElement = document.getElementById("board");
+    boardElement.innerHTML = '';
+    board.forEach((value, index) => {
+      let cell = document.createElement("div");
+      cell.classList.add("cell");
+      if (value !== '') cell.classList.add("taken");
+      cell.textContent = value;
+      cell.onclick = () => makeMove(index);
+      boardElement.appendChild(cell);
+    });
+  }
+
+  function makeMove(index) {
+    if (board[index] === '' && currentPlayer === human) {
+      board[index] = human;
+      currentPlayer = ai;
+      createBoard();
+      setTimeout(aiMove, 500);
+    }
+  }
+
+  function aiMove() {
+    let bestMove = minimax(board, ai).index;
+    board[bestMove] = ai;
+    currentPlayer = human;
+    createBoard();
+  }
+
+  function minimax(newBoard, player) {
+    let availableSpots = newBoard.map((val, idx) => val === '' ? idx : null).filter(v => v !== null);
+    if (checkWinner(newBoard, human)) return { score: -10 };
+    if (checkWinner(newBoard, ai)) return { score: 10 };
+    if (availableSpots.length === 0) return { score: 0 };
+
+    let moves = [];
+    availableSpots.forEach(spot => {
+      let move = {};
+      move.index = spot;
+      newBoard[spot] = player;
+      move.score = player === ai ? minimax(newBoard, human).score : minimax(newBoard, ai).score;
+      newBoard[spot] = '';
+      moves.push(move);
+    });
+
+    let bestMove = moves.reduce((best, move) =>
+            (player === ai ? move.score > best.score : move.score < best.score) ? move : best, moves[0]
+    );
+    document.getElementById("tree").textContent += `Player: ${player}\nMoves: ${JSON.stringify(moves, null, 2)}\n\n`;
+    return bestMove;
+  }
+
+  function checkWinner(board, player) {
+    return [ [0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6] ]
+            .some(comb => comb.every(idx => board[idx] === player));
+  }
+</script>
+</body>
+</html>
