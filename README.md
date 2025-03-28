@@ -10,6 +10,12 @@ with the new reasoning models from deepseek and openai being readily available i
 could 1 shot my short programing exercise that i used for an exam during my cs studies none of the 2 managed to visualize the decision tree correctly
 deepseek tried. OpenAi didn't make a functional game it lags out the browser in both Firefox and chromium.
 
+deepseek 1 shot attempt: https://amingyee.github.io/TicTacTie/deepseekReasoningModel1Shot
+
+
+OpenAi 1 shot attempt: https://amingyee.github.io/TicTacTie/OpenAiReasoning1ShotFail
+
+
 used prompt for both deepseek and openai
 
 "
