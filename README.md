@@ -17,7 +17,7 @@ used prompt for both deepseek and openai
 "
 hello build me a tiktactoe game where you play against the ai you should be able to choose if you start or not and the minmax algorithm where the ai "thinks" need to be visualized in a tree the game needs to be made in html, css and javascript only"
 
-April 2025 1 shot attempts
+April 2025 1 shot attempts(warning both these can crash your browser)
 
 deepseek 1 shot attempt: https://amingyee.github.io/TicTacTie/april2025/deepseekReasoningModel1Shot
 
